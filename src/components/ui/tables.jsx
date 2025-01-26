@@ -1,106 +1,90 @@
+"use client";
 import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableFooter,
-    TableHead,
-    TableHeader,
-    TableRow,
-  } from "@/components/ui/table"
-  
-  const invoices = [
-    {
-      company: " Soft UI Shopify Version",
-      paymentStatus: "Paid",
-      totalAmount: "00",
-      paymentMethod: "Credit Card",
-    },
-    {
-      company: " Soft UI Shopify Version",
-      paymentStatus: "Pending",
-      totalAmount: "00",
-      paymentMethod: "PayPal",
-    },
-    {
-      company: " Soft UI Shopify Version",
-      paymentStatus: "Unpaid",
-      totalAmount: "00",
-      paymentMethod: "Bank Transfer",
-    },
-    {
-      company: " Soft UI Shopify Version",
-      paymentStatus: "Paid",
-      totalAmount: "00",
-      paymentMethod: "Credit Card",
-    },
-    {
-      company: " Soft UI Shopify Version",
-      paymentStatus: "Paid",
-      totalAmount: "00",
-      paymentMethod: "PayPal",
-    },
-    {
-      company: " Soft UI Shopify Version",
-      paymentStatus: "Pending",
-      totalAmount: "00",
-      paymentMethod: "Bank Transfer",
-    },
-    {
-      company: " Soft UI Shopify Version",
-      paymentStatus: "Unpaid",
-      totalAmount: "00",
-      paymentMethod: "Credit Card",
-    },
-    {
-      company: " Soft UI Shopify Version",
-      paymentStatus: "Unpaid",
-      totalAmount: "00",
-      paymentMethod: "Credit Card",
-    },
-   
-  ]
-  
-  export function Tables() {
-    return (
-      <>
-        <div className="m-2 ">
-          <p className="font-bold text-2xl">Projects</p>
-          <p className="text-xs">done this month <span className="text-green-400">40%</span></p>
-        </div>
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { collection, getDocs,updateDoc,doc } from "firebase/firestore";
+import { db } from "@/app/firebase/firebase";
+import { useEffect, useState } from "react";
+
+
+
+
+export function Tables() {
+  const [data, setData] = useState([]);
+  const [StateId, SetStateID] = useState("");
+  console.log("TCL: data", data);
+  async function handleData() {
+    const querySnapshot = await getDocs(collection(db, "auth"));
+    var arr = [];
+    querySnapshot.forEach((doc) => {
+      arr.push({ ...doc.data(), id: doc.id });
+    });
+    setData(arr);
+  }
+
+  useEffect(() => {
+    handleData();
+  }, []);
+
+   async function checkStatus(){
+    try {
+      const docRef = doc(db, "auth", StateId); 
+      await updateDoc(docRef, {
+        status: true
+
+      }); 
+      console.log("Document successfully updated!");
+    } catch (error) {
+      console.error("Error updating document:", error);
+    }
+
+
+  }
+
+  return (
+    <>
+      <div className="m-2 ">
+        <p className="font-bold text-2xl">Projects</p>
+        <p className="text-xs">
+          done this month <span className="text-green-400">40%</span>
+        </p>
+      </div>
       <Table>
         <TableCaption>Projects</TableCaption>
         <TableCaption>done this month 40%</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead >COMPANIES</TableHead>
-            <TableHead>	MEMBERS</TableHead>
-            <TableHead>COMPETITION</TableHead>
-            <TableHead className="text-right">BUDGET</TableHead>
+            <TableHead>CNIC</TableHead>
+            <TableHead> Name</TableHead>
+            <TableHead>Catagory</TableHead>
+            <TableHead className="text-right">Request</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {invoices.map((invoice,idx) => (
-            <TableRow key={idx}>
-              <TableCell className="font-medium">{invoice.company.slice(0,16)+"..."}</TableCell>
-              <TableCell>
-                <div className="flex">
-                    <img src="https://marketplace.canva.com/EAFHfL_zPBk/1/0/1600w/canva-yellow-inspiration-modern-instagram-profile-picture-kpZhUIzCx_w.jpg" alt="image"  className="h-7 w-7 rounded-full"/>
-                    <img src="https://www.shutterstock.com/image-photo/head-shot-portrait-close-smiling-600nw-1714666150.jpg" alt="image"  className="h-7 w-7 rounded-full object-cover"/>
-                    <img src="https://marketplace.canva.com/EAFHfL_zPBk/1/0/1600w/canva-yellow-inspiration-modern-instagram-profile-picture-kpZhUIzCx_w.jpg" alt="image"  className="h-7 w-7 rounded-full"/>
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHxzM_e4qVtnPZttfPhbjcPssC78WndotRPg&s" alt="image"  className="h-7 w-7 rounded-full"/>
-                </div>
+          {data.map((invoice, idx) => (
+            <TableRow key={idx} onClick={()=> SetStateID(invoice.id)
+            }>
+              <TableCell className="font-medium">{invoice.cnic}</TableCell>
+              <TableCell>{invoice.name}</TableCell>
+              <TableCell className="pl-14 xl:pl-0 uppercase">
+                {invoice.parsedData?.subCategory || "N/A"}{" "}
+                {/* Ensure parsedData exists */}
               </TableCell>
-              <TableCell className="pl-14 xl:pl-0">
-                <div className="flex flex-col gap-1">
-                  <p>60%</p>
-                  <div className="w-[30%] h-1 border-2 border-green-800"></div>
-                </div>
+              <TableCell className="text-right">
+                {invoice.parsedData?.amount || "N/A"}{" "}
+                {/* Ensure parsedData exists */}
               </TableCell>
-              <TableCell className="text-right">{invoice.totalAmount}</TableCell>
             </TableRow>
           ))}
         </TableBody>
+
         <TableFooter>
           <TableRow>
             <TableCell colSpan={3}>Total</TableCell>
@@ -108,8 +92,25 @@ import {
           </TableRow>
         </TableFooter>
       </Table>
-      </>
 
-    )
-  }
-  
+      {/* {
+        StateId? swal.fire{{
+
+          title: "Are you sure?",
+          text: "You won't be able to revert this!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, delete it!",
+        }}.then((result) => {
+          if (result.isConfirmed) {
+            checkStatus();
+            swal.fire("Deleted!", "Your file has been deleted.", "success");
+          }
+        }}:
+        null
+      } */}
+    </>
+  );
+}
