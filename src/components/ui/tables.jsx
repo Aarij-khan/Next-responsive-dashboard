@@ -12,6 +12,7 @@ import {
 import { collection, getDocs,updateDoc,doc } from "firebase/firestore";
 import { db } from "@/app/firebase/firebase";
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2"
 
 
 
@@ -19,6 +20,7 @@ import { useEffect, useState } from "react";
 export function Tables() {
   const [data, setData] = useState([]);
   const [StateId, SetStateID] = useState("");
+	console.log("TCL: Tables -> StateId", StateId)
   console.log("TCL: data", data);
   async function handleData() {
     const querySnapshot = await getDocs(collection(db, "auth"));
@@ -32,21 +34,35 @@ export function Tables() {
   useEffect(() => {
     handleData();
   }, []);
-
-   async function checkStatus(){
+  async function checkStatus(StateId) {
     try {
-      const docRef = doc(db, "auth", StateId); 
-      await updateDoc(docRef, {
-        status: true
-
-      }); 
-      console.log("Document successfully updated!");
+      // Show confirmation dialog
+      const result = await Swal.fire({
+        title: "Do you want to approve?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Approve",
+      });
+  
+      // If confirmed, update the Firestore document
+      if (result.isConfirmed && StateId) {
+        const docRef = doc(db, "auth", StateId); 
+        await updateDoc(docRef, {
+          status: true, 
+        });
+  
+        Swal.fire("Approved!", "User request approved", "success"); // Show success message
+      }
     } catch (error) {
-      console.error("Error updating document:", error);
+      console.error("Error updating document:", error); // Handle errors
+      Swal.fire("Error", "There was an issue approving the request", "error");
     }
-
-
   }
+
+  
 
   return (
     <>
@@ -69,7 +85,11 @@ export function Tables() {
         </TableHeader>
         <TableBody>
           {data.map((invoice, idx) => (
-            <TableRow key={idx} onClick={()=> SetStateID(invoice.id)
+            <TableRow key={idx} onClick={()=>{
+              // SetStateID(invoice.id)
+              checkStatus(invoice.id)
+
+            } 
             }>
               <TableCell className="font-medium">{invoice.cnic}</TableCell>
               <TableCell>{invoice.name}</TableCell>
@@ -79,8 +99,11 @@ export function Tables() {
               </TableCell>
               <TableCell className="text-right">
                 {invoice.parsedData?.amount || "N/A"}{" "}
-                {/* Ensure parsedData exists */}
               </TableCell>
+              <TableCell className="text-right">
+                {invoice?.status === false ? "pending" : "approved"}
+              </TableCell>
+             
             </TableRow>
           ))}
         </TableBody>
